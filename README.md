@@ -1,2 +1,3 @@
-# docker-airflow
-Docker image for Apache Airflow.
+# fnn-docker-airflow
+
+Tiny, scalable, production ready Apache Airflow image for Docker.
