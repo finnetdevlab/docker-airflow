@@ -1,0 +1,65 @@
+# WARNING: THIS IS CREATED FOR TEST AND DEVELOPMENT. DO NOT USE IT IN PRODUCTION.
+version: '3.7'
+
+services:
+    redis:
+        image: redis:5.0.5
+
+    postgres:
+        image: postgres:9.6
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+
+    webserver:
+        build: .
+        restart: always
+        depends_on:
+            - postgres
+            - redis
+        environment:
+            - FERNET_KEY=81HqDtbqAywKSOumSha3BhWNOdQ26slT6K0YaZeZyPs=
+        volumes:
+            - ./dags:/home/airflow/dags
+        ports:
+            - "8080:8080"
+        command: webserver
+        healthcheck:
+            test: ["CMD-SHELL", "[ -f /home/airflow/airflow-webserver.pid ]"]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+
+    flower:
+        build: .
+        restart: always
+        depends_on:
+            - redis
+        environment:
+            - EXECUTOR=Celery
+        ports:
+            - "5555:5555"
+        command: flower
+
+    scheduler:
+        build: .
+        restart: always
+        depends_on:
+            - webserver
+        volumes:
+            - ./dags:/home/airflow/dags
+        environment:
+            - FERNET_KEY=81HqDtbqAywKSOumSha3BhWNOdQ26slT6K0YaZeZyPs=
+        command: scheduler
+
+    worker:
+        build: .
+        restart: always
+        depends_on:
+            - scheduler
+        volumes:
+            - ./dags:/home/airflow/dags
+        environment:
+            - FERNET_KEY=81HqDtbqAywKSOumSha3BhWNOdQ26slT6K0YaZeZyPs=
+        command: worker
